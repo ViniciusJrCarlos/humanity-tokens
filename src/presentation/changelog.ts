@@ -1,5 +1,6 @@
 /** Novidades exibidas na tela Sobre. */
 export const CHANGELOG = [
+  { version: '1.1.3', title: 'Ajuste', items: ['Rodapé mostra a versão atual'] },
   {
     version: '1.1.2', title: 'Tokens exatos e prompt estruturado', items: [
       'Contagem exata de tokens no padrão OpenAI (tokenizador o200k_base, GPT-4o e posteriores)',

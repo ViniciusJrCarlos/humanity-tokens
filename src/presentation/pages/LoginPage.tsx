@@ -41,7 +41,7 @@ export function LoginPage() {
       </form>
 
       <p className="pwa-note">🍃 PWA instalável · funciona offline no celular</p>
-      <p className="version">v1.0 prévia · ambiente de testes</p>
+      <p className="version" data-testid="login-version">v{__APP_VERSION__}{import.meta.env.VITE_STORAGE_PREFIX ? ' · prévia' : ''} · ambiente de testes</p>
     </div>
   )
 }

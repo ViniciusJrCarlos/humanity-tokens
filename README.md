@@ -3,7 +3,7 @@
 PWA para análise, otimização e humanização de prompts.
 **Mais humano. Mais claro. Menos tokens.**
 
-> Versão **1.1.2**: login local com usuários de teste, banco local (IndexedDB), contagem exata de tokens no padrão OpenAI (o200k_base), modos Enxugar e Prompt estruturado (sem IA), temas, perfil, configurações, relatórios comparativos e modelos favoritos.
+> Versão **1.1.3**: login local com usuários de teste, banco local (IndexedDB), contagem exata de tokens no padrão OpenAI (o200k_base), modos Enxugar e Prompt estruturado (sem IA), temas, perfil, configurações, relatórios comparativos e modelos favoritos.
 
 - Oficial (branch `main`): https://viniciusjrcarlos.github.io/humanity-tokens/
 - Prévia (branch `dev`): https://viniciusjrcarlos.github.io/humanity-tokens/preview/
