@@ -1,8 +1,11 @@
 name: Deploy GitHub Pages
 
+# Publica num único artefato:
+#   main -> https://viniciusjrcarlos.github.io/humanity-tokens/          (oficial)
+#   dev  -> https://viniciusjrcarlos.github.io/humanity-tokens/preview/  (prévia)
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
@@ -12,23 +15,34 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { ref: dev, path: dev }
+      - uses: actions/checkout@v4
+        with: { ref: main, path: main }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
+          cache-dependency-path: |
+            dev/package-lock.json
+            main/package-lock.json
+      - name: Instalar e testar (dev)
+        working-directory: dev
+        run: npm ci && npm test
+      - name: Instalar (main)
+        working-directory: main
+        run: npm ci
+      - name: Montar site (oficial + prévia)
+        run: bash dev/scripts/build-pages.sh main dev site
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
   deploy:
     needs: build
     runs-on: ubuntu-latest

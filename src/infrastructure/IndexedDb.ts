@@ -1,6 +1,7 @@
 /** Wrapper mínimo do IndexedDB baseado em Promises. */
-export const DB_NAME = 'humanity-tokens'
-export const DB_VERSION = 1
+// A prévia (/preview/) usa um banco separado para não afetar a versão oficial no mesmo domínio.
+export const DB_NAME = import.meta.env?.VITE_STORAGE_PREFIX ? `humanity-tokens-${import.meta.env.VITE_STORAGE_PREFIX}` : 'humanity-tokens'
+export const DB_VERSION = 2
 
 export function openDatabase(name = DB_NAME): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -12,6 +13,9 @@ export function openDatabase(name = DB_NAME): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains('analyses')) {
         db.createObjectStore('analyses', { keyPath: 'id' }).createIndex('userId', 'userId')
+      }
+      if (!db.objectStoreNames.contains('templates')) {
+        db.createObjectStore('templates', { keyPath: 'id' }).createIndex('userId', 'userId')
       }
     }
     req.onsuccess = () => resolve(req.result)

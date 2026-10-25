@@ -9,3 +9,5 @@ coverage
 !.env.example
 *.pem
 *.key
+dist-preview
+site

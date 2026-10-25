@@ -28,6 +28,22 @@ export class User {
     return email.trim().toLowerCase()
   }
 
+  static readonly NAME_MAX = 60
+
+  /** Altera o nome exibido. Lança erro se for vazio ou longo demais. */
+  rename(name: string): void {
+    const clean = name.trim().replace(/\s+/g, ' ')
+    if (!clean) throw new Error('Informe um nome.')
+    if (clean.length > User.NAME_MAX) throw new Error(`Use no máximo ${User.NAME_MAX} caracteres.`)
+    this.props = { ...this.props, name: clean, updatedAt: new Date().toISOString() }
+  }
+
+  /** Iniciais para o avatar (ex.: "Ana Koala" -> "AK"). */
+  static initials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean)
+    return ((parts[0]?.[0] ?? '?') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
+  }
+
   changePassword(hash: string, salt: string): void {
     this.props = { ...this.props, passwordHash: hash, passwordSalt: salt, mustChangePassword: false, updatedAt: new Date().toISOString() }
   }

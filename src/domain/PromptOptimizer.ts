@@ -1,7 +1,11 @@
 import { LEVELS, LevelId } from './OptimizationLevel'
 import { TokenEstimator } from './TokenEstimator'
 
+/** Como a análise foi feita. 'ai' fica reservado para a Fase 3 (IA real). */
+export type AnalysisMethod = 'heuristic' | 'ai'
+
 export interface OptimizationResult {
+  method: AnalysisMethod
   original: string
   optimized: string
   level: LevelId
@@ -41,7 +45,7 @@ export class PromptOptimizer {
     const optimizedTokens = TokenEstimator.estimate(out)
     const savingsPercent = originalTokens ? Math.max(0, Math.round((1 - optimizedTokens / originalTokens) * 100)) : 0
     return {
-      original: text, optimized: out, level: levelId, originalTokens, optimizedTokens, savingsPercent,
+      method: 'heuristic', original: text, optimized: out, level: levelId, originalTokens, optimizedTokens, savingsPercent,
       changes: [...counts].map(([label, count]) => ({ label, count })),
     }
   }

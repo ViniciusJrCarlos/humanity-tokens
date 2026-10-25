@@ -2,11 +2,20 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Nome do repositório no GitHub Pages. Troque se o repositório tiver outro nome.
-const BASE = '/humanity-tokens/'
+import { readFileSync } from 'node:fs'
+
+// Caminho no GitHub Pages. A prévia é publicada com VITE_BASE=/humanity-tokens/preview/.
+const BASE = process.env.VITE_BASE || '/humanity-tokens/'
+const IS_PREVIEW = BASE.includes('/preview/')
+const VERSION = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version
 
 export default defineConfig({
   base: BASE,
+  define: {
+    __APP_VERSION__: JSON.stringify(VERSION),
+    // A prévia usa banco e chaves locais separados da versão oficial (mesmo domínio).
+    'import.meta.env.VITE_STORAGE_PREFIX': JSON.stringify(IS_PREVIEW ? 'preview' : ''),
+  },
   plugins: [
     react(),
     VitePWA({
@@ -14,8 +23,8 @@ export default defineConfig({
       includeAssets: ['favicon.png', 'favicon-32.png', 'apple-touch-icon.png', 'logo-login.jpg'],
       manifest: {
         id: BASE,
-        name: 'Humanity Tokens',
-        short_name: 'Humanity Tokens',
+        name: IS_PREVIEW ? 'Humanity Tokens (Prévia)' : 'Humanity Tokens',
+        short_name: IS_PREVIEW ? 'HT Prévia' : 'Humanity Tokens',
         description: 'Mais humano. Mais claro. Menos tokens.',
         lang: 'pt-BR',
         theme_color: '#2563EB',
@@ -32,6 +41,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,jpg,svg,ico,webmanifest}'],
         navigateFallback: `${BASE}index.html`,
+        // O app oficial não deve capturar as páginas da prévia.
+        navigateFallbackDenylist: IS_PREVIEW ? [] : [/\/preview\//],
       },
     }),
   ],

@@ -1,4 +1,5 @@
-import type { AnalysisRepository, Analysis, SessionStore, UserRepository, User } from '../src/domain'
+import type { AnalysisRepository, Analysis, SessionStore, UserRepository, User, TemplateRepository, PromptTemplate, PreferencesStore } from '../src/domain'
+import { Preferences } from '../src/domain'
 
 export class MemoryUserRepo implements UserRepository {
   map = new Map<string, User>()
@@ -12,6 +13,7 @@ export class MemoryAnalysisRepo implements AnalysisRepository {
   async add(a: Analysis) { this.items.push(a) }
   async listByUser(id: string) { return this.items.filter((a) => a.userId === id) }
   async delete(id: string) { this.items = this.items.filter((a) => a.id !== id) }
+  async clearByUser(id: string) { const n = this.items.filter((a) => a.userId === id).length; this.items = this.items.filter((a) => a.userId !== id); return n }
 }
 export class MemorySession implements SessionStore {
   v: string | null = null
@@ -19,3 +21,13 @@ export class MemorySession implements SessionStore {
 }
 let n = 0
 export const idGen = () => `id-${++n}`
+export class MemoryTemplateRepo implements TemplateRepository {
+  items: PromptTemplate[] = []
+  async add(t: PromptTemplate) { this.items.push(t) }
+  async listByUser(id: string) { return this.items.filter((t) => t.props.userId === id) }
+  async delete(id: string) { this.items = this.items.filter((t) => t.id !== id) }
+}
+export class MemoryPrefs implements PreferencesStore {
+  p = new Preferences()
+  load() { return this.p } save(p: Preferences) { this.p = p }
+}

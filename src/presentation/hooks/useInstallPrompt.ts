@@ -1,3 +1,4 @@
+import { storageKey } from '../../infrastructure/storageKeys'
 import { useEffect, useState } from 'react'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -5,7 +6,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-const DISMISS_KEY = 'humanity_install_dismissed'
+const DISMISS_KEY = storageKey('install_dismissed')
 
 /** Controla o convite de instalação do PWA (Android/Chrome nativo; iOS com instruções). */
 export function useInstallPrompt() {

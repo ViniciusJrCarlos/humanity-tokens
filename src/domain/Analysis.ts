@@ -13,6 +13,8 @@ export class Analysis {
   get id() { return this.props.id }
   get userId() { return this.props.userId }
   get level(): LevelId { return this.props.level }
+  /** Registros antigos (v1.0) não tinham método: eram todos heurísticos. */
+  get method() { return this.props.method ?? 'heuristic' }
   get savedTokens() { return this.props.originalTokens - this.props.optimizedTokens }
 
   static fromResult(userId: string, result: OptimizationResult, id: string): Analysis {

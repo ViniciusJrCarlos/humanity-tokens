@@ -34,6 +34,14 @@ export class AuthService {
     return user.toSession()
   }
 
+  async updateName(userId: string, name: string): Promise<SessionUser> {
+    const user = await this.users.findById(userId)
+    if (!user) throw new AuthError('Sessão expirada. Entre novamente.')
+    try { user.rename(name) } catch (e: any) { throw new AuthError(e.message) }
+    await this.users.save(user)
+    return user.toSession()
+  }
+
   async currentUser(): Promise<SessionUser | null> {
     const id = this.session.get()
     if (!id) return null

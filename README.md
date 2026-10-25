@@ -3,7 +3,12 @@
 PWA para análise, otimização e humanização de prompts.
 **Mais humano. Mais claro. Menos tokens.**
 
-> Versão **v1.0 (prévia de testes)**: login local com usuários de teste, banco local no navegador (IndexedDB) e otimização heurística (sem IA).
+> Versão **1.1.0 (prévia)**: login local com usuários de teste, banco local (IndexedDB), otimização heurística (sem IA), temas, perfil, configurações, relatórios e modelos favoritos.
+
+- Oficial (branch `main`): https://viniciusjrcarlos.github.io/humanity-tokens/
+- Prévia (branch `dev`): https://viniciusjrcarlos.github.io/humanity-tokens/preview/
+
+A prévia tem banco, sessão e PWA próprios (scope `/humanity-tokens/preview/`), sem misturar dados com a oficial.
 
 ## Como rodar
 
@@ -18,10 +23,10 @@ npm run icons      # regera os ícones do PWA a partir de assets/brand/app-icon.
 
 ## Usuários de teste (fictícios)
 
-| E-mail | Senha temporária |
-|---|---|
-| teste@humanitytokens.app | Koala@2026 |
-| demo@humanitytokens.app | Koala@2026 |
+| Nome fictício | E-mail | Senha temporária |
+|---|---|---|
+| Ana Koala | teste@humanitytokens.app | Koala@2026 |
+| Bruno Eucalipto | demo@humanitytokens.app | Koala@2026 |
 
 No primeiro acesso a troca de senha é **obrigatória** (mín. 8 caracteres, letras e números).
 As senhas ficam guardadas só como hash (PBKDF2-SHA256, 210 mil iterações, salt aleatório) no IndexedDB **do próprio aparelho**.
@@ -66,6 +71,14 @@ Heurística honesta, **sem IA**: remove palavras de preenchimento ("basicamente"
 - **Mais Técnico**: remove cortesias e usa imperativo.
 - **Custom**: a intensidade (10–50%) define quantas regras entram.
 
+## Funcionalidades (v1.1)
+- Cabeçalho com nome/e-mail e menu do usuário (Perfil, Configurações, Sobre, Sair com confirmação). No celular: navegação inferior e menu em folha.
+- Temas Sistema/Claro/Escuro/Suave e 6 cores de destaque (`domain/Preferences.ts`), salvos localmente.
+- Perfil: editar nome e trocar senha. Configurações: tema, cor, exportar histórico (JSON/CSV) e limpar.
+- Relatórios (Chart.js): pizza de uso × economia e linhas por dia, séries "sem IA" e "com IA (em breve)". Cada análise registra `method` (`heuristic` | `ai`).
+- Analisador: copiar resultado e modelos de prompt favoritos.
+- Sobre: versão lida do `package.json` e novidades (`presentation/changelog.ts`).
+
 ## PWA
 - `start_url` e `scope` = `/humanity-tokens/`, com ícones 192/512, maskable, apple-touch-icon e favicon.
 - Service worker (Workbox) faz cache do app para funcionar **offline**.
@@ -73,7 +86,7 @@ Heurística honesta, **sem IA**: remove palavras de preenchimento ("basicamente"
 - Rotas com `HashRouter` (`#/analyzer`), sem 404 no GitHub Pages.
 
 ## Deploy (GitHub Pages)
-O workflow `.github/workflows/deploy.yml` roda testes e build e publica `dist/` a cada push na `main` (ou manualmente).
+O workflow `.github/workflows/deploy.yml` roda a cada push na `main` ou na `dev`: faz o checkout das duas branches, testa a `dev` e monta um único site com `scripts/build-pages.sh` (a `main` na raiz e a `dev` em `/preview/`).
 Em *Settings → Pages*, a origem precisa estar como **GitHub Actions**.
 
 ## Versionamento

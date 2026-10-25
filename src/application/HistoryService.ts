@@ -1,3 +1,4 @@
+import { HistoryExporter } from '../domain'
 import type { Analysis, AnalysisRepository } from '../domain'
 
 export interface DashboardStats {
@@ -16,6 +17,13 @@ export class HistoryService {
   async list(userId: string): Promise<Analysis[]> {
     const items = await this.repo.listByUser(userId)
     return items.sort((a, b) => b.props.createdAt.localeCompare(a.props.createdAt))
+  }
+
+  clear(userId: string): Promise<number> { return this.repo.clearByUser(userId) }
+
+  async exportAs(userId: string, format: 'json' | 'csv'): Promise<string> {
+    const items = await this.list(userId)
+    return format === 'json' ? HistoryExporter.toJSON(items) : HistoryExporter.toCSV(items)
   }
 
   remove(id: string): Promise<void> { return this.repo.delete(id) }
