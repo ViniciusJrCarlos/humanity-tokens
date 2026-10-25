@@ -1,0 +1,27 @@
+import { PromptOptimizer } from '../domain'
+import { AuthService } from '../application/AuthService'
+import { AnalyzerService } from '../application/AnalyzerService'
+import { HistoryService } from '../application/HistoryService'
+import { SeedService } from '../application/SeedService'
+import { openDatabase } from './IndexedDb'
+import { IndexedDbUserRepository } from './IndexedDbUserRepository'
+import { IndexedDbAnalysisRepository } from './IndexedDbAnalysisRepository'
+import { Pbkdf2PasswordHasher } from './Pbkdf2PasswordHasher'
+import { LocalSessionStore } from './LocalSessionStore'
+
+export interface Services { auth: AuthService; analyzer: AnalyzerService; history: HistoryService }
+
+/** Composição de dependências: único lugar que conhece as implementações concretas. */
+export async function createServices(): Promise<Services> {
+  const db = await openDatabase()
+  const users = new IndexedDbUserRepository(db)
+  const analyses = new IndexedDbAnalysisRepository(db)
+  const hasher = new Pbkdf2PasswordHasher()
+  const idGen = () => crypto.randomUUID()
+  await new SeedService(users, hasher, idGen).ensureTestUsers()
+  return {
+    auth: new AuthService(users, hasher, new LocalSessionStore()),
+    analyzer: new AnalyzerService(new PromptOptimizer(), analyses, idGen),
+    history: new HistoryService(analyses),
+  }
+}
