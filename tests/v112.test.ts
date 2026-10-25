@@ -26,7 +26,7 @@ describe('StructuredPromptBuilder', () => {
   const text = 'Oi! você poderia me explicar como funciona a fotossíntese? sou professor do ensino fundamental. quero em tópicos curtos. não use termos técnicos. Obrigado desde já'
   it('monta as seções com instruções diretas e pontuação', () => {
     const out = b.build(text)
-    expect(out).toContain('Papel:\n' + StructuredPromptBuilder.DEFAULT_ROLE)
+    expect(out).toContain('Papel:\nVocê é um professor experiente e didático.')
     expect(out).toContain('Tarefa:\n- Explique como funciona a fotossíntese.')
     expect(out).toContain('Contexto:\n- Sou professor do ensino fundamental.')
     expect(out).toMatch(/Formato de resposta:\n- .*tópicos curtos\./)
