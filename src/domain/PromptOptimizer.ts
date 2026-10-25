@@ -1,17 +1,28 @@
 import { LEVELS, LevelId } from './OptimizationLevel'
 import { TokenEstimator } from './TokenEstimator'
+import { StructuredPromptBuilder } from './StructuredPromptBuilder'
+import type { TokenCounter, TokenizerId } from './TokenCounter'
 
 /** Como a análise foi feita. 'ai' fica reservado para a Fase 3 (IA real). */
 export type AnalysisMethod = 'heuristic' | 'ai'
 
+/** Modo sem IA: 'enxugar' reduz tokens; 'estruturado' organiza (pode aumentar). */
+export type OptimizationMode = 'enxugar' | 'estruturado'
+
 export interface OptimizationResult {
   method: AnalysisMethod
+  mode: OptimizationMode
+  tokenizer: TokenizerId
+  /** Diferença com sinal: otimizado − original (negativo = economia). */
+  tokenDelta: number
+  /** Diferença percentual com sinal (negativo = economia). */
+  deltaPercent: number
   original: string
   optimized: string
   level: LevelId
   originalTokens: number
   optimizedTokens: number
-  /** Percentual real de tokens economizados (0–100). */
+  /** Percentual de tokens economizados (0–100; 0 quando aumenta). */
   savingsPercent: number
   changes: { label: string; count: number }[]
 }
@@ -22,6 +33,33 @@ export interface OptimizationResult {
  * A intensidade (10–50) só afeta o nível Custom: define quantas famílias de regras entram.
  */
 export class PromptOptimizer {
+  constructor(private counter: TokenCounter = new TokenEstimator(), private readonly structured = new StructuredPromptBuilder()) {}
+
+  /** Troca o contador (ex.: quando o tokenizador exato termina de carregar). */
+  useCounter(counter: TokenCounter) { this.counter = counter }
+  get tokenCounter(): TokenCounter { return this.counter }
+
+  /** Monta o resultado comparando original e otimizado com o contador atual. */
+  compare(text: string, out: string, mode: OptimizationMode, level: LevelId, changes: { label: string; count: number }[]): OptimizationResult {
+    const originalTokens = this.counter.count(text)
+    const optimizedTokens = this.counter.count(out)
+    const tokenDelta = optimizedTokens - originalTokens
+    const deltaPercent = originalTokens ? Math.round((tokenDelta / originalTokens) * 100) : 0
+    return {
+      method: 'heuristic', mode, tokenizer: this.counter.id, original: text, optimized: out, level,
+      originalTokens, optimizedTokens, tokenDelta, deltaPercent, savingsPercent: Math.max(0, -deltaPercent), changes,
+    }
+  }
+
+  structure(text: string): OptimizationResult {
+    const out = this.structured.build(text)
+    return this.compare(text, out, 'estruturado', 'tecnico', out ? [{ label: 'estruturado', count: 1 }] : [])
+  }
+
+  run(text: string, mode: OptimizationMode, levelId: LevelId, intensity = 30): OptimizationResult {
+    return mode === 'estruturado' ? this.structure(text) : this.optimize(text, levelId, intensity)
+  }
+
   optimize(text: string, levelId: LevelId, intensity = 30): OptimizationResult {
     const level = LEVELS[levelId]
     let rules = level.rules
@@ -41,13 +79,7 @@ export class PromptOptimizer {
     bump('repetição', dedup.removed)
     out = this.tidy(dedup.text)
 
-    const originalTokens = TokenEstimator.estimate(text)
-    const optimizedTokens = TokenEstimator.estimate(out)
-    const savingsPercent = originalTokens ? Math.max(0, Math.round((1 - optimizedTokens / originalTokens) * 100)) : 0
-    return {
-      method: 'heuristic', original: text, optimized: out, level: levelId, originalTokens, optimizedTokens, savingsPercent,
-      changes: [...counts].map(([label, count]) => ({ label, count })),
-    }
+    return this.compare(text, out, 'enxugar', levelId, [...counts].map(([label, count]) => ({ label, count })))
   }
 
   /** Remove palavras duplicadas seguidas ("muito muito") e frases repetidas. */

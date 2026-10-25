@@ -3,7 +3,7 @@
 PWA para análise, otimização e humanização de prompts.
 **Mais humano. Mais claro. Menos tokens.**
 
-> Versão **1.1.0 (prévia)**: login local com usuários de teste, banco local (IndexedDB), otimização heurística (sem IA), temas, perfil, configurações, relatórios e modelos favoritos.
+> Versão **1.1.2**: login local com usuários de teste, banco local (IndexedDB), contagem exata de tokens no padrão OpenAI (o200k_base), modos Enxugar e Prompt estruturado (sem IA), temas, perfil, configurações, relatórios comparativos e modelos favoritos.
 
 - Oficial (branch `main`): https://viniciusjrcarlos.github.io/humanity-tokens/
 - Prévia (branch `dev`): https://viniciusjrcarlos.github.io/humanity-tokens/preview/
@@ -71,6 +71,13 @@ Heurística honesta, **sem IA**: remove palavras de preenchimento ("basicamente"
 - **Mais Técnico**: remove cortesias e usa imperativo.
 - **Custom**: a intensidade (10–50%) define quantas regras entram.
 
+## Novidades da v1.1.2
+
+- **Tokens exatos**: contagem com `js-tiktoken` (vocabulário `o200k_base`, padrão OpenAI do GPT-4o em diante), carregado sob demanda e guardado no cache offline. Enquanto carrega, o app mostra uma estimativa marcada como tal.
+- **Prompt estruturado** (sem IA): organiza o pedido em Papel, Tarefa, Contexto, Formato de resposta e Restrições, corrige pontuação/maiúsculas e transforma pedidos vagos em instruções diretas. Pode **aumentar** os tokens; o app mostra a diferença com sinal (+/−) e não chama aumento de economia.
+- **Resultado editável** com botão grande "Copiar prompt" (copia o texto editado).
+- **Relatórios**: original × resultado por modo (Enxugar / Estruturado) e por método (sem IA / com IA em breve). Análises antigas são recontadas com o tokenizador exato a partir do texto salvo.
+
 ## Funcionalidades (v1.1)
 - Cabeçalho com nome/e-mail e menu do usuário (Perfil, Configurações, Sobre, Sair com confirmação). No celular: navegação inferior e menu em folha.
 - Temas Sistema/Claro/Escuro/Suave e 6 cores de destaque (`domain/Preferences.ts`), salvos localmente.
@@ -92,7 +99,7 @@ Em *Settings → Pages*, a origem precisa estar como **GitHub Actions**.
 ## Versionamento
 - `dev`: desenvolvimento e prévias.
 - `main`: o que está publicado.
-- Tags de ponto de volta: `v1.0-preview`, `v1.0`, `v1.1`… Para voltar: `git checkout v1.0` (ou reverter a `main` para a tag).
+- Tags de ponto de volta: `v1.0-preview`, `v1.0`, `v1.1`, `v1.1.2`… Para voltar: `git checkout v1.0` (ou reverter a `main` para a tag).
 
 ## Roadmap (do roteiro)
 1. **MVP**: login Google + e-mail/senha, analisador, PWA, Drive do usuário (esta prévia cobre login local, analisador, PWA e histórico local).

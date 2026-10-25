@@ -5,7 +5,7 @@ import { HistoryService, type DashboardStats } from "../../application/HistorySe
 import type { Analysis } from '../../domain'
 import { LEVELS } from '../../domain'
 
-const fmt = (n: number) => n.toLocaleString('pt-BR')
+import { deltaClass, fmt, signed } from '../components/format'
 
 export function DashboardPage() {
   const { services, user } = useApp()
@@ -26,8 +26,8 @@ export function DashboardPage() {
       <h2>Olá, {user?.name.split(' ')[0]} 👋</h2>
       <div className="cards">
         <div className="card"><h3>Análises</h3><p className="big" data-testid="stat-total">{fmt(stats.totalAnalyses)}</p></div>
-        <div className="card"><h3>Tokens economizados</h3><p className="big green" data-testid="stat-saved">{fmt(stats.tokensSaved)}</p><small>de {fmt(stats.tokensOriginal)} originais (aprox.)</small></div>
-        <div className="card"><h3>Economia média</h3><p className="big" data-testid="stat-avg">{stats.averageSavings}%</p></div>
+        <div className="card"><h3>Tokens economizados</h3><p className="big green" data-testid="stat-saved">{fmt(stats.tokensSaved)}</p><small>de {fmt(stats.tokensOriginal)} originais</small></div>
+        <div className="card"><h3>Diferença média</h3><p className={`big ${deltaClass(stats.averageDelta)}`} data-testid="stat-avg">{stats.averageDelta > 0 ? '+' : ''}{stats.averageDelta}%</p><small>negativo = economia</small></div>
       </div>
       <Link to="/analyzer" className="btn-primary large">Nova análise</Link>
       <h3 className="section-title">Recentes</h3>
@@ -35,9 +35,9 @@ export function DashboardPage() {
         <ul className="history-list">
           {recent.map((a) => (
             <li key={a.id} className="card history-item">
-              <span className="badge">{LEVELS[a.level].label}</span>
+              <span className="badge">{a.mode === 'estruturado' ? 'Estruturado' : LEVELS[a.level].label}</span>
               <p className="snippet">{a.props.original.slice(0, 120)}</p>
-              <span className="green">−{a.props.savingsPercent}%</span>
+              <span className={deltaClass(a.tokenDelta)}>{signed(a.tokenDelta)} tokens</span>
             </li>
           ))}
         </ul>

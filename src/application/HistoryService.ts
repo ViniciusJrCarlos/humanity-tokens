@@ -6,6 +6,9 @@ export interface DashboardStats {
   tokensOriginal: number
   tokensOptimized: number
   tokensSaved: number
+  tokensAdded: number
+  /** Média da diferença % com sinal (negativo = economia). */
+  averageDelta: number
   averageSavings: number
   lastAnalysisAt: string | null
 }
@@ -39,7 +42,9 @@ export class HistoryService {
       totalAnalyses: items.length,
       tokensOriginal,
       tokensOptimized,
-      tokensSaved: tokensOriginal - tokensOptimized,
+      tokensSaved: items.reduce((s, a) => s + Math.max(0, -a.tokenDelta), 0),
+      tokensAdded: items.reduce((s, a) => s + Math.max(0, a.tokenDelta), 0),
+      averageDelta: items.length ? Math.round(items.reduce((s, a) => s + a.deltaPercent, 0) / items.length) : 0,
       averageSavings: items.length ? Math.round(items.reduce((s, a) => s + a.props.savingsPercent, 0) / items.length) : 0,
       lastAnalysisAt: items[0]?.props.createdAt ?? null,
     }

@@ -1,8 +1,16 @@
+import type { TokenCounter } from './TokenCounter'
+
 /**
- * Estimativa APROXIMADA de tokens. Não é o tokenizador oficial de nenhum modelo:
- * combina ~4 caracteres por token com a contagem de palavras e pontuação.
+ * Estimativa APROXIMADA (fallback enquanto o tokenizador exato carrega, ou em testes).
+ * Média entre ~4 caracteres/token e palavras×1,3 + pontuação.
  */
-export class TokenEstimator {
+export class TokenEstimator implements TokenCounter {
+  readonly id = 'estimate' as const
+  readonly exact = false
+  readonly label = 'Estimativa'
+
+  count(text: string): number { return TokenEstimator.estimate(text) }
+
   static words(text: string): number {
     return text.trim().split(/\s+/).filter(Boolean).length
   }

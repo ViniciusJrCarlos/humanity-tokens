@@ -40,6 +40,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,jpg,svg,ico,webmanifest}'],
+        // Vocabulário do tokenizador (~2 MB) também fica no cache para uso offline.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: `${BASE}index.html`,
         // O app oficial não deve capturar as páginas da prévia.
         navigateFallbackDenylist: IS_PREVIEW ? [] : [/\/preview\//],

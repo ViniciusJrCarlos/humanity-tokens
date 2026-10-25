@@ -1,4 +1,6 @@
 import { PromptOptimizer } from '../domain'
+import type { TokenCounter } from '../domain'
+import { TiktokenCounter } from './TiktokenCounter'
 import { AuthService } from '../application/AuthService'
 import { AnalyzerService } from '../application/AnalyzerService'
 import { HistoryService } from '../application/HistoryService'
@@ -13,7 +15,7 @@ import { IndexedDbAnalysisRepository } from './IndexedDbAnalysisRepository'
 import { Pbkdf2PasswordHasher } from './Pbkdf2PasswordHasher'
 import { LocalSessionStore } from './LocalSessionStore'
 
-export interface Services { auth: AuthService; analyzer: AnalyzerService; history: HistoryService; preferences: PreferencesService; templates: TemplateService }
+export interface Services { tokenizer: Promise<TokenCounter>; auth: AuthService; analyzer: AnalyzerService; history: HistoryService; preferences: PreferencesService; templates: TemplateService }
 
 /** Composição de dependências: único lugar que conhece as implementações concretas. */
 export async function createServices(): Promise<Services> {
@@ -23,9 +25,13 @@ export async function createServices(): Promise<Services> {
   const hasher = new Pbkdf2PasswordHasher()
   const idGen = () => crypto.randomUUID()
   await new SeedService(users, hasher, idGen).ensureTestUsers()
+  const analyzer = new AnalyzerService(new PromptOptimizer(), analyses, idGen)
+  // Começa com estimativa e troca para o tokenizador exato assim que ele carregar.
+  const tokenizer = TiktokenCounter.load().then((c) => { analyzer.useCounter(c); return c })
   return {
+    tokenizer,
     auth: new AuthService(users, hasher, new LocalSessionStore()),
-    analyzer: new AnalyzerService(new PromptOptimizer(), analyses, idGen),
+    analyzer,
     history: new HistoryService(analyses),
     preferences: new PreferencesService(new LocalPreferencesStore()),
     templates: new TemplateService(new IndexedDbTemplateRepository(db), idGen),

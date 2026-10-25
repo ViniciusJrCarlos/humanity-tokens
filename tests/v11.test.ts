@@ -64,7 +64,7 @@ describe('ReportService', () => {
     expect(r.byMethod.ai.analyses).toBe(1)
     expect(r.hasAiData).toBe(true)
     expect(r.daily.map((d) => d.day)).toEqual(['2026-10-24', '2026-10-25'])
-    expect(r.daily[1].ai).toBeGreaterThan(0)
+    expect(r.daily[1].ai).toBeLessThan(0)
     expect(r.usagePercent).toBeGreaterThan(0); expect(r.usagePercent).toBeLessThan(100)
   })
   it('histórico vazio', () => {

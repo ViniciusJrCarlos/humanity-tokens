@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react'
-import type { Preferences, SessionUser, ThemeMode } from '../../domain'
+import type { Preferences, SessionUser, ThemeMode, TokenCounter } from '../../domain'
 import { createServices, Services } from '../../infrastructure/container'
 
 interface AppState {
@@ -8,6 +8,8 @@ interface AppState {
   setUser: (u: SessionUser | null) => void
   logout: () => void
   prefs: Preferences
+  /** Contador de tokens em uso (estimativa até o exato carregar). */
+  counter: TokenCounter
   updatePrefs: (change: Partial<{ theme: ThemeMode; accent: string }>) => void
 }
 
@@ -28,10 +30,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null)
   const [prefs, setPrefs] = useState<Preferences | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [counter, setCounter] = useState<TokenCounter | null>(null)
 
   useEffect(() => {
     createServices()
-      .then(async (s) => { setUser(await s.auth.currentUser()); setPrefs(s.preferences.get()); setServices(s) })
+      .then(async (s) => { setUser(await s.auth.currentUser()); setPrefs(s.preferences.get()); setCounter(s.analyzer.counter); setServices(s)
+        s.tokenizer.then(setCounter).catch(() => { /* segue com a estimativa */ }) })
       .catch((e) => setError(String(e?.message ?? e)))
   }, [])
 
@@ -50,8 +54,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [services])
 
   if (error) return <div className="center-screen">Não foi possível abrir o banco local: {error}</div>
-  if (!services || !prefs) return <div className="center-screen">Carregando…</div>
-  return <Ctx.Provider value={{ services, user, setUser, logout, prefs, updatePrefs }}>{children}</Ctx.Provider>
+  if (!services || !prefs || !counter) return <div className="center-screen">Carregando…</div>
+  return <Ctx.Provider value={{ services, user, setUser, logout, prefs, updatePrefs, counter }}>{children}</Ctx.Provider>
 }
 
 export function useApp(): AppState {
