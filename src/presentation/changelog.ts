@@ -1,5 +1,6 @@
 /** Novidades exibidas na tela Sobre. */
 export const CHANGELOG = [
+  { version: '1.1.5', title: 'Enxugar e estruturado mais precisos', items: ['Enxugar remove saudações, vocativos ("Chat,") e perguntas soltas em todos os níveis', 'Mais Técnico e Custom cortam mais enrolação (tipo, nesse caso, além disso, eu mesmo...)', 'Estruturado: seção Contexto com fatos seus (ex.: não sei programar)', 'Restrição só para instruções reais; tarefas sem conectivos pendurados', 'Papel de desenvolvedor web para pedidos de site'] },
   { version: '1.1.4', title: 'Prompt estruturado mais inteligente', items: ['Papel deduzido pelo tema do texto (marketing, apps, código, direito, saúde, ensino etc.)', 'Textos longos viram vários tópicos, um por ideia', 'Perguntas soltas como "O que expliquei?" viram a instrução "Confirme o que entendeu"'] },
   { version: '1.1.3', title: 'Ajuste', items: ['Rodapé mostra a versão atual'] },
   {

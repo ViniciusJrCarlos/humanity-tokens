@@ -33,6 +33,22 @@ const CONCISE: Rule[] = ([
   ['de forma (?:clara e )?detalhada', 'em detalhes'], ['de maneira', 'de forma'],
 ] as const).map(([s, r]) => ({ pattern: w(s), replacement: r ? `$1${r}` : '$1', label: 'concisão' }))
 
+/** Limpezas seguras em todos os níveis (v1.1.5): saudação de abertura, vocativo, "e e" e perguntas de checagem soltas. */
+const CLEAN: Rule[] = [
+  { pattern: /^\s*(?:olá|ola|oi|bom dia|boa tarde|boa noite)[,!]?\s*(?:tudo bem|tudo bom|como vai)\s*\?\s*(?:espero que sim[!.]?\s*)?/i, replacement: '', label: 'saudação' },
+  { pattern: /(^|[.!?]\s+)(?:chat(?:gpt)?|gpt|grok|gemini|claude|assistente)\s*,\s*/gi, replacement: '$1', label: 'vocativo' },
+  { pattern: /\b(e|de|que|o|a) \1\b/gi, replacement: '$1', label: 'repetição' },
+  { pattern: /,?\s*\b(?:entende|entendeu|sacou|captou)\s*[?!.]*(?=\s|$)/gi, replacement: '.', label: 'pergunta solta' },
+  { pattern: /(^|[.!?]\s+)(?:o que (?:eu )?(?:expliquei|disse|quis dizer)|faz sentido|ficou claro|deu (?:pra|para) entender|entendeu|entende)\s*\?+[!.]*/gi, replacement: '$1', label: 'pergunta solta' },
+]
+
+/** Enrolação extra cortada nos níveis Técnico/Custom (v1.1.5). */
+const TRIM: Rule[] = ([
+  ['queria conseguir', 'quero'], ['eu mesmo', 'eu'], ['além disso,?', 'e'], ['alem disso,?', 'e'], ['queria que (?:tivesse|tenha)', 'quero'], ['seria bom ter', 'quero'],
+  ['eu preciso', 'preciso'], ['eu queria', 'quero'], ['nesse caso,?', ''], ['neste caso,?', ''], ['tipo', ''], ['e também', 'e'],
+  ['de forma (?:bem )?(?:detalhada e completa|completa)', 'em detalhes'], ['muito importante', 'importante'],
+] as const).map(([s, r]) => ({ pattern: w(s), replacement: r ? `$1${r}` : '$1', label: 'enrolação' }))
+
 /** Reescritas no modo técnico: pedidos viram instruções diretas. */
 const IMPERATIVE: Rule[] = ([
   ['me (?:explique|explica|explicar)', 'Explique'], ['^(?:olá|oi|bom dia|boa tarde|boa noite)[,!]?', ''], ['me (?:diga|diz)', 'Diga'], ['me (?:mostre|mostra)', 'Mostre'],
@@ -40,7 +56,7 @@ const IMPERATIVE: Rule[] = ([
 ] as const).map(([s, r]) => ({ pattern: w(s), replacement: r ? `$1${r}` : '$1', label: 'instrução direta' }))
 
 export const LEVELS: Record<LevelId, OptimizationLevel> = {
-  humano: new OptimizationLevel('humano', 'Mais Humano', 'Tira enrolação mantendo tom natural e cordial.', [...FILLERS.slice(3), ...CONCISE]),
-  tecnico: new OptimizationLevel('tecnico', 'Mais Técnico', 'Instruções diretas, sem cortesias nem preenchimento.', [...FILLERS, ...CONCISE, ...IMPERATIVE]),
-  custom: new OptimizationLevel('custom', 'Custom', 'Aplica as regras conforme a intensidade escolhida.', [...FILLERS, ...CONCISE, ...IMPERATIVE]),
+  humano: new OptimizationLevel('humano', 'Mais Humano', 'Tira enrolação mantendo tom natural e cordial.', [...CLEAN, ...FILLERS.slice(3), ...CONCISE]),
+  tecnico: new OptimizationLevel('tecnico', 'Mais Técnico', 'Instruções diretas, sem cortesias nem preenchimento.', [...CLEAN, ...FILLERS, ...CONCISE, ...IMPERATIVE, ...TRIM]),
+  custom: new OptimizationLevel('custom', 'Custom', 'Aplica as regras conforme a intensidade escolhida.', [...CLEAN, ...TRIM, ...FILLERS, ...IMPERATIVE, ...CONCISE]),
 }

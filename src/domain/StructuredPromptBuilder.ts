@@ -6,9 +6,9 @@
 export interface StructuredPrompt { role: string; task: string[]; context: string[]; format: string[]; constraints: string[] }
 
 const ROLE_RE = /^(?:(?:você é|voce é|seja)\s+(?=(?:um|uma|o|a)\s)|(?:(?:você|voce) poderia,?\s+)?(?:aja|agir|atue|atuar) como\s+|finja ser\s+|imagine que você é\s+)(.+)$/i
-const FORMAT_RE = /\b(lista|listar|tópicos?|topicos?|tabela|parágrafos?|resum\w*|passo a passo|json|markdown|linhas|palavras|itens|bullet|exemplos?|código|formato)\b/i
-const CONSTRAINT_RE = /^(?:não|nao|nunca|evite|sem\b|apenas|somente|só\b|no máximo|no mínimo|seja (?:breve|objetivo|conciso|direto)|use (?:uma )?linguagem|mantenha|limite)/i
-const CONTEXT_RE = /^(?:sou|estou|tenho|trabalho|meu|minha|meus|minhas|nós|nossa|nosso|o contexto|contexto|porque|pois|já|ja)\b/i
+const FORMAT_RE = /\b(lista|listar|tópicos?|topicos?|tabela|parágrafos?|resum\w*|passo a passo|json|markdown|linhas|palavras|itens|bullet|formato)\b/i
+const CONSTRAINT_RE = /^(?:(?:não|nao|nunca) (?:use|usar|utilize|invente|inclua|incluir|faça|fale|escreva|mencione|cite|ultrapasse|passe|seja|dê|de|responda|repita|adicione|coloque|esqueça)\b|evite|sem (?:jargão|jargao|jargões|termos|rodeios|enrolação|emojis?|introdução|introdu\w+|explicaç\w+|tecniquês)|apenas|somente|só\b|no máximo|no mínimo|seja (?:breve|objetivo|conciso|direto)|use (?:uma )?linguagem|mantenha|limite)/i
+const CONTEXT_RE = /^(?:(?:eu )?(?:não|nao) (?:sei|tenho|entendo|conheço|conheco|domino|sou)\b|sou|estou|tenho|trabalho|meu|minha|meus|minhas|nós|nossa|nosso|o contexto|contexto|porque|pois|já|ja)\b/i
 
 /** Pedidos vagos/indiretos -> instruções diretas no imperativo. */
 const DIRECT: [RegExp, string][] = [
@@ -38,6 +38,7 @@ const FILLER = /\b(?:basicamente|literalmente|na verdade|realmente|simplesmente|
 
 /** Papel deduzido pelo tema quando o texto não define um (v1.1.4). */
 const ROLE_TOPICS: [RegExp, string][] = [
+  [/\b(site|sites|página web|landing page|loja virtual|blog)\b/i, 'desenvolvedor web que explica de forma simples para iniciantes'],
   [/\b(marketing|instagram|tiktok|redes sociais|postage(?:m|ns)|engajamento|campanha|anúncios? pagos?|vendas)\b/i, 'especialista em marketing digital e redes sociais'],
   [/\b(hospedage\w*|banco de dados|aplicativo|app|android|ios|play ?store|usuários|usuarios|assinatura|monetiza\w*|donate|doaç\w*|produto digital|startup)\b/i, 'especialista em produto digital, custos e viabilidade de aplicativos'],
   [/\b(código|codigo|programa\w*|python|javascript|typescript|java|react|api|bug|erro de compila\w*|sql|função|funcao|algoritmo)\b/i, 'desenvolvedor de software sênior'],
@@ -54,7 +55,7 @@ const CHECK_RE = /^(?:o que (?:eu )?(?:expliquei|disse|quis dizer)|entende|enten
 const CHECK_TAIL = /,?\s*\b(?:entende|entendeu|entendido|sacou|captou|certo|ok)\s*[?!.]*$/i
 const VOCATIVE = /^(?:chat(?:gpt)?|gpt|grok|gemini|claude|ia|assistente|amigo)\s*,\s*/i
 /** Conectivos que normalmente iniciam uma nova ideia em frases longas. */
-const SPLIT_RE = /,?\s+(?=(?:porém|porem|mas|nesse caso|além disso|alem disso|e também|e tambem|tipo|ou seja|enquanto|e se|e mostrar|e deixar|e a pessoa)\b)/i
+const SPLIT_RE = /,?\s+(?=(?:porém|porem|mas|nesse caso|além disso|alem disso|e também|e tambem|tipo|ou seja|enquanto|e se|e mostrar|e deixar|e a pessoa|e (?:queria|quero|gostaria|seria))\b)/i
 const LEAD_CONNECTIVE = /^(?:porém|porem|mas|nesse caso|além disso|alem disso|e também|e tambem|tipo|ou seja|e)\b\s*,?\s*/i
 const LONG = 110
 export const CONFIRM_INSTRUCTION = 'Confirme o que entendeu do pedido antes de responder.'
@@ -97,8 +98,19 @@ export class StructuredPromptBuilder {
   /** Quebra frases longas em uma ideia por item, pelos conectivos. */
   static splitIdeas(s: string): string[] {
     if (s.length <= LONG) return [s]
-    const parts = s.split(SPLIT_RE).map((p) => p.replace(LEAD_CONNECTIVE, '').replace(/\b(\w+) \1\b/gi, '$1').replace(/^[\s,;:]+|[\s,;:.]+$/g, '').trim()).filter((p) => p.split(' ').length >= 3)
+    const parts = s.split(SPLIT_RE).map((p) => (/^tipo\s/i.test(p.trim()) && p.trim().split(' ').length <= 5 ? p : p.replace(LEAD_CONNECTIVE, '')).replace(/\b(\w+) \1\b/gi, '$1').replace(/^[\s,;:]+|[\s,;:.]+$/g, '').trim()).filter((p) => p.split(' ').length >= 3)
     return parts.length ? parts : [s]
+  }
+
+  /** Limpa item de tarefa: desejos viram substantivos, sem artigo inicial nem conectivo pendurado. */
+  static tidyTask(s: string): string {
+    return s
+      .replace(/^(?:eu )?(?:preciso|quero|queria|gostaria de)\s+(?=\p{L}+r\b)/iu, '')
+      .replace(/^(?:(?:eu )?(?:queria|quero|gostaria) que (?:tivesse|tenha)|seria bom (?:ter|que tivesse)|(?:eu )?quero ter)\s+/i, '')
+      .replace(/^(?:um|uma)\s+/i, '')
+      .replace(/\b(?:pra|para) (minha|meu) /i, (_m, p) => (p.toLowerCase() === 'minha' ? 'para a ' : 'para o '))
+      .replace(/\bpra\b/gi, 'para')
+      .replace(/\s+(?:e|ou|mas|porém|porem|que|de|com)\s*[.,]?$/i, '')
   }
 
   parse(text: string): StructuredPrompt {
@@ -109,14 +121,25 @@ export class StructuredPromptBuilder {
       raw = raw.replace(VOCATIVE, '')
       if (CHECK_RE.test(raw)) { confirm = true; continue }
       if (CHECK_TAIL.test(raw)) { confirm = true; raw = raw.replace(CHECK_TAIL, '').trim(); if (!raw) continue }
-      units.push(...StructuredPromptBuilder.splitIdeas(raw))
+      for (const u of StructuredPromptBuilder.splitIdeas(raw)) {
+        // Fragmento curto "tipo um painel fácil" junta-se à ideia anterior.
+        const frag = u.match(/^(?:tipo|como|tipo assim)\s+(?:um|uma)?\s*(.+)$/i)
+        if (frag && frag[1].split(' ').length <= 4 && units.length) {
+          const prev = units.pop()!
+          const vp = prev.replace(/^(?:(eu mesmo|eu)\s+)?(?:queria|quero|gostaria de)\s+(?:conseguir\s+|poder\s+)?/i, (_m, eu) => eu ? 'para eu ' : 'para ')
+          units.push(vp !== prev ? `${frag[1]} ${vp}` : `${prev}, com ${frag[1]}`)
+        } else units.push(u)
+      }
     }
+    // Fato do usuário embutido no pedido ("pra minha oficina mecânica") vira Contexto.
+    const own = units.map((u) => u.match(/\b(?:pra|para|da|na) (minha|meu) (\p{L}+(?: (?:(?:de|do|da) )?(?!(?:porém|porem|e|que|mas|ou|com|pra|para|sem|não|nao)\b)\p{L}+){0,2})/iu)).find(Boolean)
+    if (own && !/\b(?:tenho|sou)\b/i.test(text)) out.context.push(StructuredPromptBuilder.punctuate(`Tenho ${own[1].toLowerCase() === 'minha' ? 'uma' : 'um'} ${own[2]}`))
     for (const raw of units) {
       const roleMatch = raw.replace(/[.!?]+$/, '').match(ROLE_RE)
       if (roleMatch && !out.role) { out.role = StructuredPromptBuilder.punctuate(`Você é ${roleMatch[1]}`); continue }
       if (CONSTRAINT_RE.test(raw)) { out.constraints.push(StructuredPromptBuilder.punctuate(raw)); continue }
       if (CONTEXT_RE.test(raw)) { out.context.push(StructuredPromptBuilder.punctuate(raw)); continue }
-      const d = StructuredPromptBuilder.punctuate(StructuredPromptBuilder.direct(raw))
+      const d = StructuredPromptBuilder.punctuate(StructuredPromptBuilder.tidyTask(StructuredPromptBuilder.direct(StructuredPromptBuilder.tidyTask(raw))))
       if (/^Você poderia,? /i.test(d)) { out.task.push(StructuredPromptBuilder.punctuate(d.replace(/^Você poderia,? /i, ''))); continue }
       if (FORMAT_RE.test(raw) && out.task.length > 0) out.format.push(d)
       else out.task.push(d)
